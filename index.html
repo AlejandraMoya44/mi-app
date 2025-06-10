@@ -1,0 +1,708 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>✨ Mi Agenda Mágica</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(to right, #ffe0f0, #ffc3dd);
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+      transition: background 0.5s, color 0.5s;
+    }
+    body.dark {
+      background: linear-gradient(to right, #2c2c2c, #1a1a1a);
+      color: #eee;
+    }
+    body.pastel {
+      background: linear-gradient(to right, #c3aed6, #b5ead7);
+      color: #5b4e77;
+    }
+
+    .welcome-screen {
+      position: absolute;
+      background: #fff0f6;
+      color: #e91e63;
+      font-size: 2rem;
+      width: 100%;
+      height: 100%;
+      z-index: 10;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      animation: fadeOut 3s ease-out forwards;
+      user-select: none;
+    }
+    @keyframes fadeOut {
+      0% { opacity: 1; }
+      80% { opacity: 1; }
+      100% {
+        opacity: 0;
+        visibility: hidden;
+      }
+    }
+
+    .app-container {
+      background: white;
+      padding: 2rem;
+      border-radius: 20px;
+      width: 460px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+      z-index: 1;
+      position: relative;
+      transition: background 0.5s, color 0.5s;
+    }
+    body.dark .app-container {
+      background: #3b3b3b;
+      color: #ddd;
+    }
+    body.pastel .app-container {
+      background: #dcd3f5;
+      color: #5b4e77;
+    }
+
+    h1, h2 {
+      text-align: center;
+      color: #d81b60;
+      transition: color 0.5s;
+    }
+    body.dark h1, body.dark h2 {
+      color: #f48fb1;
+    }
+    body.pastel h1, body.pastel h2 {
+      color: #4a3f66;
+    }
+
+    input, button, select {
+      width: 100%;
+      padding: 0.6rem;
+      margin-top: 0.5rem;
+      font-size: 1rem;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      transition: background 0.3s, color 0.3s, border-color 0.3s;
+    }
+    body.dark input, body.dark select {
+      background: #555;
+      color: #eee;
+      border-color: #777;
+    }
+    body.pastel input, body.pastel select {
+      background: #f1e9ff;
+      border-color: #a89edb;
+      color: #5b4e77;
+    }
+
+    button {
+      background-color: #e91e63;
+      color: white;
+      border: none;
+      cursor: pointer;
+      transition: background-color 0.3s;
+    }
+    button:hover {
+      background-color: #d81b60;
+    }
+
+    .auth-buttons {
+      display: flex;
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+    .auth-buttons button {
+      flex: 1;
+    }
+
+    #agenda {
+      display: none;
+      margin-top: 1rem;
+    }
+
+    ul#task-list {
+      list-style: none;
+      padding: 0;
+      margin-top: 1rem;
+      max-height: 280px;
+      overflow-y: auto;
+      border-radius: 12px;
+      box-shadow: inset 0 0 10px rgba(0,0,0,0.05);
+      background: #fff0f6;
+    }
+    body.dark ul#task-list {
+      background: #4a4a4a;
+      box-shadow: inset 0 0 10px rgba(255,192,203,0.15);
+    }
+    body.pastel ul#task-list {
+      background: #e0d9f7;
+      box-shadow: inset 0 0 10px rgba(74,63,102,0.15);
+    }
+
+    ul#task-list li {
+      background: #ffe3ec;
+      margin: 0.5rem 0;
+      padding: 0.7rem;
+      display: flex;
+      flex-direction: column;
+      border-radius: 12px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      cursor: pointer;
+      user-select: none;
+      transition: background-color 0.3s, color 0.3s;
+      position: relative;
+      animation: fadeIn 0.4s ease forwards;
+    }
+    body.dark ul#task-list li {
+      background: #6d2c4d;
+      color: #f8bbd0;
+    }
+    body.pastel ul#task-list li {
+      background: #c1b2e5;
+      color: #3f3351;
+    }
+
+    ul#task-list li.completed {
+      text-decoration: line-through;
+      background: #ddd;
+      color: gray;
+    }
+    body.dark ul#task-list li.completed {
+      background: #2a2a2a;
+      color: #666;
+      text-decoration: line-through;
+    }
+    body.pastel ul#task-list li.completed {
+      background: #a99fe3;
+      color: #8177b5;
+      text-decoration: line-through;
+    }
+
+    .task-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-weight: bold;
+    }
+
+    .task-meta {
+      font-size: 0.9rem;
+      color: #555;
+      margin-top: 0.3rem;
+      user-select: none;
+    }
+    body.dark .task-meta {
+      color: #d1a3b8;
+    }
+    body.pastel .task-meta {
+      color: #574f7d;
+    }
+
+    .priority-high { color: #e53935; }  /* red */
+    .priority-medium { color: #ffb300; } /* amber */
+    .priority-low { color: #43a047; } /* green */
+
+    .progress-container {
+      background: #eee;
+      border-radius: 20px;
+      margin-top: 1rem;
+      height: 18px;
+      overflow: hidden;
+      box-shadow: inset 0 0 5px rgba(0,0,0,0.1);
+    }
+    body.dark .progress-container {
+      background: #555;
+      box-shadow: inset 0 0 5px rgba(255,192,203,0.2);
+    }
+    body.pastel .progress-container {
+      background: #d6d1f0;
+      box-shadow: inset 0 0 5px rgba(74,63,102,0.2);
+    }
+
+    .progress-bar {
+      background-color: #e91e63;
+      height: 100%;
+      width: 0%;
+      transition: width 0.5s ease-in-out;
+    }
+
+    .notification {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      background: #e91e63;
+      color: white;
+      padding: 0.7rem 1.2rem;
+      border-radius: 12px;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      font-weight: bold;
+      z-index: 100;
+      user-select: none;
+    }
+    .notification.show {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .theme-switcher {
+      display: flex;
+      justify-content: center;
+      margin-top: 1rem;
+      gap: 1rem;
+    }
+    .theme-switcher button {
+      flex: 1;
+      background-color: #f48fb1;
+      color: #fff;
+      border: none;
+      border-radius: 15px;
+      cursor: pointer;
+      font-weight: bold;
+      padding: 0.5rem;
+      transition: background-color 0.3s;
+    }
+    .theme-switcher button:hover {
+      background-color: #d81b60;
+    }
+
+    .category-filter {
+      margin-top: 1rem;
+    }
+    .category-filter label {
+      margin-right: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+    }
+    .category-filter select {
+      padding: 0.5rem;
+      border-radius: 12px;
+      border: 1px solid #ccc;
+      font-size: 1rem;
+      margin-left: 5px;
+      width: 140px;
+      vertical-align: middle;
+      transition: background 0.3s, color 0.3s, border-color 0.3s;
+    }
+    body.dark .category-filter select {
+      background: #555;
+      color: #eee;
+      border-color: #777;
+    }
+    body.pastel .category-filter select {
+      background: #f1e9ff;
+      color: #5b4e77;
+      border-color: #a89edb;
+    }
+
+    @keyframes fadeIn {
+      from {opacity: 0; transform: translateY(10px);}
+      to {opacity: 1; transform: translateY(0);}
+    }
+
+    /* Animacion para li cuando se marca completado */
+    ul#task-list li.completed {
+      animation: completedAnim 0.5s forwards;
+    }
+    @keyframes completedAnim {
+      0% { background-color: #ffe3ec; color: inherit; }
+      100% { background-color: #ddd; color: gray; }
+    }
+
+    /* Estilos para el botón de exportar/importar */
+    .export-import {
+      margin-top: 1rem;
+      display: flex;
+      gap: 1rem;
+      justify-content: center;
+    }
+    .export-import button {
+      flex: 1;
+      background-color: #7b1fa2;
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 0.5rem;
+      cursor: pointer;
+      font-weight: bold;
+      transition: background-color 0.3s;
+    }
+    .export-import button:hover {
+      background-color: #6a1b9a;
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Pantalla de bienvenida -->
+  <div class="welcome-screen">🌸✨ Welcome to Mi Agenda Mágica ✨🌸</div>
+
+  <div class="app-container">
+    <h1 id="form-title">Mi Agenda Mágica 🌟</h1>
+
+    <!-- Login -->
+    <form id="login-form">
+      <input type="email" id="login-email" placeholder="📧 Correo electrónico" required />
+      <input type="password" id="login-password" placeholder="🔒 Contraseña" required />
+      <div class="auth-buttons">
+        <button type="submit">Entrar</button>
+        <button type="button" id="show-signup">Registrarme</button>
+      </div>
+    </form>
+
+    <!-- Registro -->
+    <form id="signup-form" style="display:none;">
+      <input type="text" id="signup-name" placeholder="👤 Nombre completo" required />
+      <input type="email" id="signup-email" placeholder="📧 Correo electrónico" required />
+      <input type="password" id="signup-password" placeholder="🔐 Contraseña" required />
+      <div class="auth-buttons">
+        <button type="submit">Registrarme</button>
+        <button type="button" id="show-login">Entrar</button>
+      </div>
+    </form>
+
+    <p id="login-message" style="text-align:center; color:red; margin-top:1rem;"></p>
+
+    <!-- Agenda -->
+    <div id="agenda">
+      <h2>📝 Tus Tareas</h2>
+
+      <form id="task-form">
+        <input type="text" id="new-task" placeholder="✍️ Nueva tarea..." required />
+        <input type="date" id="task-date" required />
+        <select id="task-priority" required>
+          <option value="alta">🔥 Alta</option>
+          <option value="media">⚡ Media</option>
+          <option value="baja">🌿 Baja</option>
+        </select>
+        <select id="task-category" required>
+          <option value="personal">🏠 Personal</option>
+          <option value="trabajo">💼 Trabajo</option>
+          <option value="urgente">⏰ Urgente</option>
+        </select>
+        <button type="submit">Agregar 🆕</button>
+      </form>
+
+      <div class="category-filter">
+        <label for="filter-category">Filtrar categoría:</label>
+        <select id="filter-category">
+          <option value="todas">Todas</option>
+          <option value="personal">🏠 Personal</option>
+          <option value="trabajo">💼 Trabajo</option>
+          <option value="urgente">⏰ Urgente</option>
+        </select>
+      </div>
+
+      <div class="progress-container" aria-label="Progreso de tareas completadas">
+        <div class="progress-bar" id="progress-bar"></div>
+      </div>
+
+      <ul id="task-list"></ul>
+
+      <div class="export-import">
+        <button id="export-tasks">Exportar tareas 📥</button>
+        <button id="import-tasks">Importar tareas 📤</button>
+        <input type="file" id="import-file" accept="application/json" style="display:none" />
+      </div>
+
+      <div class="theme-switcher" aria-label="Cambiar tema">
+        <button id="theme-light">Modo Claro</button>
+        <button id="theme-dark">Modo Oscuro</button>
+        <button id="theme-pastel">Modo Pastel</button>
+      </div>
+
+      <button id="logout" style="margin-top: 1rem;">Cerrar sesión 🚪</button>
+    </div>
+  </div>
+
+  <div class="notification" id="notification"></div>
+
+  <script>
+    const loginForm = document.getElementById("login-form");
+    const signupForm = document.getElementById("signup-form");
+    const showSignupBtn = document.getElementById("show-signup");
+    const showLoginBtn = document.getElementById("show-login");
+    const formTitle = document.getElementById("form-title");
+    const loginMessage = document.getElementById("login-message");
+    const agenda = document.getElementById("agenda");
+    const taskForm = document.getElementById("task-form");
+    const taskList = document.getElementById("task-list");
+    const logoutBtn = document.getElementById("logout");
+    const notification = document.getElementById("notification");
+    const progressBar = document.getElementById("progress-bar");
+    const filterCategory = document.getElementById("filter-category");
+    const themeLightBtn = document.getElementById("theme-light");
+    const themeDarkBtn = document.getElementById("theme-dark");
+    const themePastelBtn = document.getElementById("theme-pastel");
+    const exportBtn = document.getElementById("export-tasks");
+    const importBtn = document.getElementById("import-tasks");
+    const importFileInput = document.getElementById("import-file");
+
+    let currentUser = null;
+    let currentTheme = localStorage.getItem('theme') || 'light';
+
+    // Mostrar la pantalla de bienvenida sólo 3s
+    window.onload = () => {
+      setTimeout(() => {
+        document.querySelector('.welcome-screen').style.display = 'none';
+      }, 3000);
+      // Aplicar tema guardado
+      applyTheme(currentTheme);
+      // Comprobar sesión guardada
+      const savedUser = localStorage.getItem("currentUser");
+      if (savedUser) {
+        currentUser = JSON.parse(savedUser);
+        showAgenda();
+        renderTasks();
+      }
+    };
+
+    function getUsers() {
+      return JSON.parse(localStorage.getItem("users")) || [];
+    }
+
+    function saveUsers(users) {
+      localStorage.setItem("users", JSON.stringify(users));
+    }
+
+    function getTasks(email) {
+      return JSON.parse(localStorage.getItem("tasks_" + email)) || [];
+    }
+
+    function saveTasks(email, tasks) {
+      localStorage.setItem("tasks_" + email, JSON.stringify(tasks));
+    }
+
+    function showNotification(msg, duration = 2000) {
+      notification.textContent = msg;
+      notification.classList.add("show");
+      setTimeout(() => {
+        notification.classList.remove("show");
+      }, duration);
+    }
+
+    function renderTasks() {
+      const tasks = getTasks(currentUser.email);
+      const filter = filterCategory.value;
+      taskList.innerHTML = "";
+
+      // Filtrar tareas por categoría
+      let filteredTasks = tasks;
+      if(filter !== "todas") {
+        filteredTasks = tasks.filter(t => t.category === filter);
+      }
+
+      filteredTasks.forEach((task, index) => {
+        const li = document.createElement("li");
+        if (task.done) li.classList.add("completed");
+
+        // Comprobar si la tarea está cerca de la fecha (menos de 2 días)
+        const today = new Date();
+        const taskDate = new Date(task.date);
+        const diffDays = (taskDate - today) / (1000 * 60 * 60 * 24);
+        if(diffDays >=0 && diffDays <= 2 && !task.done){
+          li.style.border = "2px solid #e53935"; // borde rojo para aviso
+          li.title = "¡Esta tarea está próxima a su fecha límite!";
+        }
+
+        li.innerHTML = `
+          <div class="task-header">
+            <span>${task.text}</span>
+            <span class="priority-${task.priority}">🔥${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}</span>
+          </div>
+          <div class="task-meta">Fecha: ${task.date} | Categoría: ${task.category}</div>
+        `;
+
+        li.addEventListener("click", () => {
+          tasks[index].done = !tasks[index].done;
+          saveTasks(currentUser.email, tasks);
+          renderTasks();
+          updateProgress();
+        });
+
+        taskList.appendChild(li);
+      });
+      updateProgress();
+    }
+
+    function updateProgress() {
+      const tasks = getTasks(currentUser.email);
+      if (tasks.length === 0) {
+        progressBar.style.width = "0%";
+        return;
+      }
+      const doneTasks = tasks.filter(t => t.done).length;
+      const percent = (doneTasks / tasks.length) * 100;
+      progressBar.style.width = percent + "%";
+    }
+
+    function showAgenda() {
+      loginForm.style.display = "none";
+      signupForm.style.display = "none";
+      loginMessage.textContent = "";
+      agenda.style.display = "block";
+      formTitle.textContent = `Bienvenida, ${currentUser.name} 🌸`;
+    }
+
+    function applyTheme(theme) {
+      currentTheme = theme;
+      document.body.classList.remove("light", "dark", "pastel");
+      if(theme === 'dark') {
+        document.body.classList.add("dark");
+      } else if(theme === 'pastel') {
+        document.body.classList.add("pastel");
+      } else {
+        document.body.classList.add("light");
+      }
+      localStorage.setItem('theme', theme);
+    }
+
+    // Eventos Login y Registro
+    showSignupBtn.addEventListener("click", () => {
+      loginForm.style.display = "none";
+      signupForm.style.display = "block";
+      formTitle.textContent = "Regístrate para crear tu agenda ✨";
+      loginMessage.textContent = "";
+    });
+
+    showLoginBtn.addEventListener("click", () => {
+      loginForm.style.display = "block";
+      signupForm.style.display = "none";
+      formTitle.textContent = "Mi Agenda Mágica 🌟";
+      loginMessage.textContent = "";
+    });
+
+    signupForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const name = document.getElementById("signup-name").value.trim();
+      const email = document.getElementById("signup-email").value.trim();
+      const password = document.getElementById("signup-password").value.trim();
+
+      let users = getUsers();
+      if(users.find(u => u.email === email)) {
+        loginMessage.textContent = "El correo ya está registrado.";
+        return;
+      }
+      users.push({name, email, password});
+      saveUsers(users);
+
+      loginMessage.style.color = "green";
+      loginMessage.textContent = "Registro exitoso. Por favor, inicia sesión.";
+      signupForm.reset();
+      showLoginBtn.click();
+    });
+
+    loginForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const email = document.getElementById("login-email").value.trim();
+      const password = document.getElementById("login-password").value.trim();
+
+      const users = getUsers();
+      const user = users.find(u => u.email === email && u.password === password);
+
+      if(!user) {
+        loginMessage.style.color = "red";
+        loginMessage.textContent = "Correo o contraseña incorrectos.";
+        return;
+      }
+      currentUser = user;
+      localStorage.setItem("currentUser", JSON.stringify(currentUser));
+      showAgenda();
+      renderTasks();
+    });
+
+    logoutBtn.addEventListener("click", () => {
+      localStorage.removeItem("currentUser");
+      currentUser = null;
+      agenda.style.display = "none";
+      loginForm.style.display = "block";
+      formTitle.textContent = "Mi Agenda Mágica 🌟";
+      loginMessage.textContent = "";
+      taskList.innerHTML = "";
+      progressBar.style.width = "0%";
+    });
+
+    // Agregar tarea
+    taskForm.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const text = document.getElementById("new-task").value.trim();
+      const date = document.getElementById("task-date").value;
+      const priority = document.getElementById("task-priority").value;
+      const category = document.getElementById("task-category").value;
+
+      if(!text || !date || !priority || !category) return;
+
+      let tasks = getTasks(currentUser.email);
+      tasks.push({text, date, priority, category, done: false});
+      saveTasks(currentUser.email, tasks);
+
+      taskForm.reset();
+      renderTasks();
+      showNotification("¡Tarea agregada con éxito! 🎉");
+    });
+
+    // Filtrar tareas
+    filterCategory.addEventListener("change", renderTasks);
+
+    // Cambiar tema
+    themeLightBtn.addEventListener("click", () => applyTheme("light"));
+    themeDarkBtn.addEventListener("click", () => applyTheme("dark"));
+    themePastelBtn.addEventListener("click", () => applyTheme("pastel"));
+
+    // Exportar tareas a JSON
+    exportBtn.addEventListener("click", () => {
+      const tasks = getTasks(currentUser.email);
+      const dataStr = JSON.stringify(tasks, null, 2);
+      const blob = new Blob([dataStr], {type: "application/json"});
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "tareas_agenda.json";
+      a.click();
+      URL.revokeObjectURL(url);
+      showNotification("¡Tareas exportadas! 💾");
+    });
+
+    // Importar tareas desde JSON
+    importBtn.addEventListener("click", () => {
+      importFileInput.click();
+    });
+
+    importFileInput.addEventListener("change", (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        try {
+          const importedTasks = JSON.parse(event.target.result);
+          if(Array.isArray(importedTasks)) {
+            // Validar estructura básica
+            if(importedTasks.every(t => t.text && t.date && t.priority && t.category !== undefined)){
+              saveTasks(currentUser.email, importedTasks);
+              renderTasks();
+              showNotification("¡Tareas importadas correctamente! 📥");
+            } else {
+              alert("El archivo JSON no tiene el formato correcto.");
+            }
+          } else {
+            alert("El archivo JSON no contiene un arreglo de tareas.");
+          }
+        } catch {
+          alert("Error al leer el archivo JSON.");
+        }
+      };
+      reader.readAsText(file);
+      importFileInput.value = ""; // Reset para permitir importar mismo archivo luego
+    });
+  </script>
+</body>
+</html>
